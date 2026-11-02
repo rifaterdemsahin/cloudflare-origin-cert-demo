@@ -126,7 +126,10 @@
     <span class="pill">⚙️ API / CLI method</span>
     <span class="pill">🧩 nginx install</span>
     <span class="pill">✅ Verification</span>
+    <span class="pill">🛫 Fly.io worked example</span>
   </div>
+  <p style="font-size:0.8rem; color:#9fb0c9; margin-top:14px;">💡 Every box in the diagrams below is clickable — it opens the relevant doc, script, or file in a new tab.</p>
+  <p style="margin-top:10px;">🤔 New here? Read <a href="rationale.html" style="color:#93c5fd;">the plain-English "why" page</a> first.</p>
 </header>
 
 <main>
@@ -141,6 +144,9 @@ flowchart LR
     style U fill:#1e293b,stroke:#f59e0b,color:#fff
     style CF fill:#2a1a0f,stroke:#f97316,stroke-width:3px,color:#fff
     style O fill:#0f1f3d,stroke:#2563eb,color:#fff
+    click U "https://developers.cloudflare.com/ssl/" "Cloudflare SSL overview" _blank
+    click CF "https://www.cloudflare.com/network/" "Cloudflare's global edge network" _blank
+    click O "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/nginx/origin.conf.example" "nginx origin config example" _blank
     </div>
     <div class="ok">Edge ↔ Visitor is covered automatically. Edge ↔ Origin needs the Origin CA cert.</div>
   </section>
@@ -161,6 +167,11 @@ sequenceDiagram
     You->>Origin: 4. Install cert + key in nginx
     You->>CF: 5. Set SSL/TLS mode = Full (strict)
     You->>Origin: 6. curl --resolve to verify chain ✅
+
+    link You: GitHub Repo @ https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo
+    link CLI: 01-generate-csr.sh @ https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/scripts/01-generate-csr.sh
+    link CF: Origin CA API docs @ https://developers.cloudflare.com/api/resources/origin_ca_certificates/
+    link Origin: nginx/origin.conf.example @ https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/nginx/origin.conf.example
     </div>
 
     <table>
@@ -178,9 +189,9 @@ sequenceDiagram
     <h2>🔑 3. Credentials this demo needs <span class="badge">sensitive</span></h2>
     <p>Origin CA certs use a special <strong>Origin CA Key</strong> — not your normal API Token. It can only create/list/revoke origin certs, nothing else on the account.</p>
     <div class="steps">
-      <div class="step"><div class="num">1</div><div><strong>Log in</strong> to <code>dash.cloudflare.com</code> as <code>contact@rifaterdemsahin.com</code><div class="hint">(this demo's designated Cloudflare account)</div></div></div>
-      <div class="step"><div class="num">2</div><div><strong>Click your profile</strong> (top-right) → <strong>My Profile</strong></div></div>
-      <div class="step"><div class="num">3</div><div><strong>API Tokens</strong> tab → scroll to <strong>Origin CA Key</strong> → <strong>View</strong></div></div>
+      <div class="step"><div class="num">1</div><div>🔑 <strong>Log in</strong> to <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">dash.cloudflare.com</a> as <code>contact@rifaterdemsahin.com</code><div class="hint">(this demo's designated Cloudflare account)</div></div></div>
+      <div class="step"><div class="num">2</div><div>🚀 Or jump straight to <a href="https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens" target="_blank" rel="noopener">your API Tokens page</a></div></div>
+      <div class="step"><div class="num">3</div><div>🔎 Scroll to <strong>Origin CA Key</strong> → <strong>View</strong></div></div>
     </div>
     <pre><code>export CF_ORIGIN_CA_KEY="v1.0-xxxxxxxx..."   # from the dashboard above
 export CF_ZONE_DOMAIN="example.com"           # your zone/domain on this account
@@ -191,8 +202,8 @@ export CF_HOSTNAMES="example.com,*.example.com"</code></pre>
   <section>
     <h2>🖱️ 4. Method A — Dashboard (click-through)</h2>
     <div class="steps">
-      <div class="step"><div class="num">1</div>Log in to <strong>dash.cloudflare.com</strong> with <code>contact@rifaterdemsahin.com</code></div>
-      <div class="step"><div class="num">2</div>Select your domain / zone</div>
+      <div class="step"><div class="num">1</div>🔑 Log in to <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">dash.cloudflare.com</a> with <code>contact@rifaterdemsahin.com</code> — or go straight to <a href="https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens" target="_blank" rel="noopener">your API Tokens page</a> 🚀</div>
+      <div class="step"><div class="num">2</div>🌍 Select your domain / zone</div>
       <div class="step"><div class="num">3</div>Left sidebar → <strong>SSL/TLS</strong> → <strong>Origin Server</strong> tab</div>
       <div class="step"><div class="num">4</div>Click <strong>Create Certificate</strong></div>
       <div class="step"><div class="num">5</div>Private key type <strong>RSA (2048)</strong>, hostnames <code>example.com, *.example.com</code>, validity <strong>15 years</strong></div>
@@ -211,6 +222,14 @@ flowchart TD
     G --> H["SSL/TLS mode → Full (strict)"]
     style D fill:#4a3407,stroke:#d97706,color:#fff
     style H fill:#0f3d1f,stroke:#16a34a,color:#fff
+    click A "https://dash.cloudflare.com/" "Open the Cloudflare dashboard" _blank
+    click B "https://developers.cloudflare.com/fundamentals/manage-domains/add-site/" "Adding a domain/zone to Cloudflare" _blank
+    click C "https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/" "SSL/TLS → Origin Server docs" _blank
+    click D "https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/#2-generate-an-origin-certificate" "Creating an Origin Certificate" _blank
+    click E "https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/#2-generate-an-origin-certificate" "Where the PEM + key are shown" _blank
+    click F "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/.env.example" ".env.example in this repo" _blank
+    click G "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/nginx/origin.conf.example" "nginx origin config example" _blank
+    click H "https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/full-strict/" "Full (strict) SSL mode docs" _blank
     </div>
   </section>
 
@@ -262,8 +281,47 @@ flowchart LR
     B -->|"self-signed / expired"| D["❌ fix cert install"]
     style C fill:#0f3d1f,stroke:#16a34a,color:#fff
     style D fill:#3d0f12,stroke:#dc2626,color:#fff
+    click A "https://curl.se/docs/manpage.html#--resolve" "curl --resolve manpage" _blank
+    click B "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/scripts/03-verify.sh" "03-verify.sh source" _blank
+    click C "https://cloudflare-origin-cert-demo.fly.dev/" "This live demo" _blank
+    click D "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/scripts/03-verify.sh" "03-verify.sh source" _blank
     </div>
     <p>Expect the issuer to show <strong>CloudFlare Origin SSL Certificate Authority</strong>.</p>
+  </section>
+
+  <section>
+    <h2>🛫 8. Worked example — installing the cert on a Fly.io origin</h2>
+    <p>🖥️ A runnable stand-in for <em>"install the cert on your real origin server"</em>: a small nginx <strong>Fly.io Machine</strong> that terminates TLS itself with the Origin CA cert — just like a VM/VPS — while Fly only forwards raw TCP on 443 (no Fly-managed TLS involved). 🙌</p>
+    <div class="mermaid">
+flowchart LR
+    S["📜 origin.pem + origin.key"] --> B64["🔢 base64"]
+    B64 --> SEC["🔒 flyctl secrets set"]
+    SEC --> DEPLOY["🚀 flyctl deploy origin-flyio/"]
+    DEPLOY --> NGINX["🖥️ nginx terminates TLS"]
+    NGINX --> IP["🌐 Fly dedicated IPv4"]
+    IP --> DNS["☁️ Cloudflare DNS A record 🟠"]
+    DNS --> STRICT["🔐 SSL/TLS = Full (strict)"]
+    style SEC fill:#0f1f3d,stroke:#2563eb,color:#fff
+    style STRICT fill:#0f3d1f,stroke:#16a34a,color:#fff
+    click S "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/scripts/02-request-origin-cert.sh" "Where the cert comes from" _blank
+    click SEC "https://fly.io/docs/apps/secrets/" "Fly.io secrets docs" _blank
+    click DEPLOY "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/tree/main/origin-flyio" "origin-flyio/ source" _blank
+    click NGINX "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/origin-flyio/nginx.conf" "nginx.conf for the origin" _blank
+    click IP "https://fly.io/docs/networking/services/" "Fly.io raw TCP services docs" _blank
+    click DNS "https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f" "Your Cloudflare dashboard" _blank
+    click STRICT "https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/full-strict/" "Full (strict) SSL mode docs" _blank
+    </div>
+    <table>
+      <tr><th>File</th><th>Purpose</th></tr>
+      <tr><td><a href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/origin-flyio/Dockerfile" target="_blank" rel="noopener"><code>origin-flyio/Dockerfile</code></a></td><td>nginx image that decodes the cert/key at boot</td></tr>
+      <tr><td><a href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/origin-flyio/entrypoint.sh" target="_blank" rel="noopener"><code>origin-flyio/entrypoint.sh</code></a></td><td>🔓 Writes the Fly secrets to <code>/etc/ssl/cloudflare/</code></td></tr>
+      <tr><td><a href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/origin-flyio/nginx.conf" target="_blank" rel="noopener"><code>origin-flyio/nginx.conf</code></a></td><td>Origin server block — TLS terminated with the Origin CA cert</td></tr>
+      <tr><td><a href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/origin-flyio/fly.origin.toml" target="_blank" rel="noopener"><code>origin-flyio/fly.origin.toml</code></a></td><td>🛫 Raw TCP passthrough on 443 (not Fly's auto-TLS)</td></tr>
+      <tr><td><a href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/scripts/04-install-cert-flyio-origin.sh" target="_blank" rel="noopener"><code>scripts/04-install-cert-flyio-origin.sh</code></a></td><td>Prints the exact commands — creates / bills nothing on its own</td></tr>
+    </table>
+    <pre><code>./scripts/04-install-cert-flyio-origin.sh
+# then copy/run the printed flyctl + Cloudflare DNS commands</code></pre>
+    <div class="warn">⚠️ The printed step 4 allocates a <strong>dedicated Fly.io IPv4</strong> (💰 ~$2/month). The script only prints the command — nothing is created or charged until you run it yourself.</div>
   </section>
 
   <section>
@@ -278,12 +336,13 @@ flowchart LR
 </main>
 
 <footer>
+  🤔 Why do this at all? <a href="rationale.html">Read the plain-English rationale</a><br/>
   Full source, scripts, and README: <a class="repo-link" href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo">github.com/rifaterdemsahin/cloudflare-origin-cert-demo</a><br/>
   Reference: <a href="https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/">Cloudflare Docs — Origin CA certificates</a>
 </footer>
 
 <script>
-  mermaid.initialize({ startOnLoad: true, theme: "dark" });
+  mermaid.initialize({ startOnLoad: true, theme: "dark", securityLevel: "loose" });
 </script>
 </body>
 </html>

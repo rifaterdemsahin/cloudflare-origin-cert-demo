@@ -1,0 +1,25 @@
+# 🛫 Fly.io config for the "origin server" worked example.
+# Note the [[services]] block uses raw TCP passthrough on 443 — NOT Fly's
+# automatic TLS (http_service). That's what lets nginx inside the Machine
+# terminate TLS itself, using the Cloudflare Origin CA cert, exactly like a
+# real VM/VPS origin would.
+app = "cloudflare-origin-cert-demo-origin"
+primary_region = "lhr"
+
+[build]
+
+[[services]]
+  internal_port = 443
+  protocol = "tcp"
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 443
+    # No `handlers = ["tls"]` here on purpose — Fly forwards raw bytes,
+    # nginx does the TLS handshake with the Origin CA cert.
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

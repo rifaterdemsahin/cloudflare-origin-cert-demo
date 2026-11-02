@@ -4,6 +4,10 @@ A hands-on, visual walkthrough of **Cloudflare Origin CA Certificates**: what th
 
 > 🎯 Goal: encrypt the hop between Cloudflare's edge and **your own origin server** with a certificate Cloudflare trusts, so you can safely run **Full (strict)** SSL mode.
 
+🌐 **Live interactive demo:** **[cloudflare-origin-cert-demo.fly.dev](https://cloudflare-origin-cert-demo.fly.dev/)** — same walkthrough below, rendered as a single page with clickable Mermaid diagrams (each node links out to the relevant doc, script, or file).
+
+🤔 **New to this?** Read **[`RATIONALE.md`](RATIONALE.md)** (or the [live version](https://cloudflare-origin-cert-demo.fly.dev/rationale.html)) first — a plain-English, no-jargon explanation of *why* this exists, using an office building and an ID badge as the analogy.
+
 ---
 
 ## 🧭 1. Where this fits — the big picture
@@ -63,7 +67,7 @@ Cloudflare Origin CA certs are issued with a special **Origin CA Key** — *not*
 
 | Where to get it | Steps |
 |---|---|
-| 🌐 Cloudflare Dashboard | Log in as `contact@rifaterdemsahin.com` → click your profile (top-right) → **My Profile** → **API Tokens** tab → scroll to **Origin CA Key** → **View** |
+| 🌐 Cloudflare Dashboard | Log in as `contact@rifaterdemsahin.com` → 🔑 **[jump straight to your API Tokens page](https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens)** → scroll to **Origin CA Key** → **View** |
 
 Export it locally (never commit this):
 
@@ -79,9 +83,9 @@ export CF_HOSTNAMES="example.com,*.example.com"
 
 ## 🖱️ 4. Method A — Dashboard (click-through, no CLI)
 
-1. Log in to **dash.cloudflare.com** with `contact@rifaterdemsahin.com`
-2. Select your domain/zone
-3. Left sidebar → **SSL/TLS** → **Origin Server** tab
+1. 🔑 Log in to **[dash.cloudflare.com](https://dash.cloudflare.com/)** with `contact@rifaterdemsahin.com` — or jump straight to **[your API Tokens page](https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens)** for the Origin CA Key
+2. 🌍 Select your domain/zone
+3. 🧭 Left sidebar → **SSL/TLS** → **Origin Server** tab
 4. Click **Create Certificate**
 5. Choose:
    - Private key type: **RSA (2048)**
@@ -176,19 +180,72 @@ flowchart LR
 
 ---
 
+## 🛫 8. Worked example — installing the cert on a Fly.io origin
+
+A concrete, runnable stand-in for "install the cert on your real origin server": a small nginx Fly.io **Machine** that terminates TLS itself using the Origin CA cert — just like a VM/VPS would — with Fly only forwarding raw TCP on 443 (no Fly-managed TLS involved).
+
+```mermaid
+flowchart LR
+    S["📜 origin.pem + origin.key<br/>(from steps 1-2)"] --> B64["🔢 base64"]
+    B64 --> SEC["🔒 flyctl secrets set<br/>ORIGIN_CERT_B64 / ORIGIN_KEY_B64"]
+    SEC --> DEPLOY["🚀 flyctl deploy<br/>origin-flyio/"]
+    DEPLOY --> NGINX["🖥️ nginx terminates TLS<br/>with the Origin CA cert"]
+    NGINX --> IP["🌐 Fly dedicated IPv4"]
+    IP --> DNS["☁️ Cloudflare DNS A record<br/>🟠 Proxied"]
+    DNS --> STRICT["🔐 SSL/TLS mode = Full (strict)"]
+
+    click S "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/scripts/02-request-origin-cert.sh" "Where the cert comes from" _blank
+    click SEC "https://fly.io/docs/apps/secrets/" "Fly.io secrets docs" _blank
+    click DEPLOY "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/tree/main/origin-flyio" "origin-flyio/ source" _blank
+    click NGINX "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/origin-flyio/nginx.conf" "nginx.conf for the origin" _blank
+    click IP "https://fly.io/docs/networking/services/" "Fly.io raw TCP services docs" _blank
+    click DNS "https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f" "Your Cloudflare dashboard" _blank
+    click STRICT "https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/full-strict/" "Full (strict) SSL mode docs" _blank
+```
+
+| File | Purpose |
+|---|---|
+| [`origin-flyio/Dockerfile`](origin-flyio/Dockerfile) | nginx image that decodes the cert/key at boot |
+| [`origin-flyio/entrypoint.sh`](origin-flyio/entrypoint.sh) | 🔓 Writes `ORIGIN_CERT_B64` / `ORIGIN_KEY_B64` secrets to `/etc/ssl/cloudflare/` |
+| [`origin-flyio/nginx.conf`](origin-flyio/nginx.conf) | Origin server block — TLS terminated with the Origin CA cert |
+| [`origin-flyio/fly.origin.toml`](origin-flyio/fly.origin.toml) | 🛫 Raw **TCP passthrough** on 443 (not Fly's auto-TLS) |
+| [`scripts/04-install-cert-flyio-origin.sh`](scripts/04-install-cert-flyio-origin.sh) | Prints the exact commands to run — doesn't create or bill anything on its own |
+
+Run it:
+
+```bash
+./scripts/04-install-cert-flyio-origin.sh
+# then copy/run the printed flyctl + Cloudflare DNS commands
+```
+
+> ⚠️ **Cost note:** step 4 of the printed instructions allocates a **dedicated Fly.io IPv4**, which Fly bills at roughly **$2/month**. The script only prints the command — nothing is created or charged until you run it yourself.
+
+---
+
 ## 📁 Repo layout
 
 ```
 cloudflare-origin-cert-demo/
 ├── README.md                          ← you are here
+├── index.html                         ← live interactive version (fly.dev)
+├── rationale.html                     ← 🤔 plain-English "why" page (live)
+├── RATIONALE.md                       ← same, as markdown
+├── TODO.md                            ← live progress tracker
+├── SOP.md                             ← standard operating procedure
 ├── diagrams/
 │   └── architecture.md                ← standalone diagram source
 ├── scripts/
 │   ├── 01-generate-csr.sh
 │   ├── 02-request-origin-cert.sh
-│   └── 03-verify.sh
+│   ├── 03-verify.sh
+│   └── 04-install-cert-flyio-origin.sh ← 🛫 worked example (§8)
 ├── nginx/
 │   └── origin.conf.example
+├── origin-flyio/                      ← 🛫 Fly.io "origin server" example
+│   ├── Dockerfile
+│   ├── entrypoint.sh
+│   ├── nginx.conf
+│   └── fly.origin.toml
 ├── .github/workflows/shellcheck.yml   ← lints the scripts on push
 ├── .env.example
 └── .gitignore
@@ -204,5 +261,6 @@ cloudflare-origin-cert-demo/
 
 ## 📚 References
 
+- 🌐 **Live demo** — [cloudflare-origin-cert-demo.fly.dev](https://cloudflare-origin-cert-demo.fly.dev/)
 - Cloudflare Docs — [Origin CA certificates](https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/)
 - Cloudflare API — [Origin CA Certificates endpoint](https://developers.cloudflare.com/api/resources/origin_ca_certificates/)
