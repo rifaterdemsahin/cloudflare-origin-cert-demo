@@ -82,12 +82,15 @@
     font-size: 0.85rem;
   }
   pre code { background: none; padding: 0; color: #d7e3f4; }
-  .steps { display: grid; gap: 14px; }
+  .steps { display: grid; gap: 18px; }
   .step {
     display: grid;
     grid-template-columns: 40px 1fr;
-    gap: 14px;
+    gap: 16px;
     align-items: start;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
   }
   .step .num {
     width: 40px; height: 40px;
@@ -98,6 +101,16 @@
   }
   .step strong { color: #fff; }
   .step .hint { color: var(--muted); font-size: 0.9rem; }
+  .method-a .steps { gap: 20px; margin-bottom: 24px; }
+  .method-a .step:nth-child(1) .num { background: linear-gradient(135deg, #f97316, #d97706); color: #1b1203; }
+  .method-a .step:nth-child(2) .num { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; }
+  .method-a .step:nth-child(3) .num { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; }
+  .method-a .step:nth-child(4) .num { background: linear-gradient(135deg, #d946ef, #a21caf); color: #fff; }
+  .method-a .step:nth-child(5) .num { background: linear-gradient(135deg, #0ea5e9, #0369a1); color: #fff; }
+  .method-a .step:nth-child(6) .num { background: linear-gradient(135deg, #eab308, #a16207); color: #1b1203; }
+  .method-a .step:nth-child(7) .num { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; }
+  .method-a .step:nth-child(8) .num { background: linear-gradient(135deg, #14b8a6, #0f766e); color: #fff; }
+  .method-a .mermaid { margin-top: 24px; padding: 24px; }
   .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
   .pill { background: rgba(37,99,235,0.15); color: #93c5fd; border: 1px solid rgba(37,99,235,0.35); padding: 4px 12px; border-radius: 999px; font-size: 0.82rem; }
   .warn {
@@ -199,7 +212,7 @@ export CF_HOSTNAMES="example.com,*.example.com"</code></pre>
     <div class="warn">⚠️ Never commit this key. The repo's <code>.gitignore</code> already excludes <code>*.key</code>, <code>*.csr</code>, <code>*.pem</code>, and <code>.env</code>.</div>
   </section>
 
-  <section>
+  <section class="method-a">
     <h2>🖱️ 4. Method A — Dashboard (click-through)</h2>
     <div class="steps">
       <div class="step"><div class="num">1</div>🔑 Log in to <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">dash.cloudflare.com</a> with <code>contact@rifaterdemsahin.com</code> — or go straight to <a href="https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens" target="_blank" rel="noopener">your API Tokens page</a> 🚀</div>
@@ -220,7 +233,13 @@ flowchart TD
     E --> F["Paste into origin.pem / origin.key"]
     F --> G["Install on nginx / apache"]
     G --> H["SSL/TLS mode → Full (strict)"]
+    style A fill:#2a1a0f,stroke:#f97316,color:#fff
+    style B fill:#0f1f3d,stroke:#2563eb,color:#fff
+    style C fill:#0f3d1f,stroke:#16a34a,color:#fff
     style D fill:#4a3407,stroke:#d97706,color:#fff
+    style E fill:#3d0f3a,stroke:#d946ef,color:#fff
+    style F fill:#0f3043,stroke:#0ea5e9,color:#fff
+    style G fill:#3d2f07,stroke:#eab308,color:#fff
     style H fill:#0f3d1f,stroke:#16a34a,color:#fff
     click A "https://dash.cloudflare.com/" "Open the Cloudflare dashboard" _blank
     click B "https://developers.cloudflare.com/fundamentals/manage-domains/add-site/" "Adding a domain/zone to Cloudflare" _blank
