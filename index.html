@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cloudflare Origin CA Certificate — End-to-End Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #121b2e;
+    --panel-border: #22304a;
+    --text: #e6edf7;
+    --muted: #9fb0c9;
+    --orange: #f97316;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --amber: #d97706;
+    --code-bg: #0a1020;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 10% -10%, #1b2a4a 0%, var(--bg) 55%);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header {
+    padding: 48px 24px 32px;
+    text-align: center;
+  }
+  header .emoji { font-size: 48px; }
+  h1 {
+    font-size: 2rem;
+    margin: 12px 0 8px;
+    background: linear-gradient(90deg, #f97316, #f59e0b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header p { color: var(--muted); max-width: 680px; margin: 0 auto; }
+  main { max-width: 980px; margin: 0 auto; padding: 0 20px 80px; }
+  section {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 28px 28px 32px;
+    margin-bottom: 28px;
+    box-shadow: 0 10px 30px -15px rgba(0,0,0,0.6);
+  }
+  section h2 {
+    margin-top: 0;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(249,115,22,0.15);
+    color: var(--orange);
+    border: 1px solid rgba(249,115,22,0.3);
+  }
+  .mermaid { background: #0d1626; border-radius: 12px; padding: 16px; margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--panel-border); }
+  th { color: var(--muted); font-weight: 600; }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 6px; font-size: 0.88em; color: #ffd8a8; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+  }
+  pre code { background: none; padding: 0; color: #d7e3f4; }
+  .steps { display: grid; gap: 14px; }
+  .step {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .step .num {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--orange), var(--amber));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #1b1203;
+  }
+  .step strong { color: #fff; }
+  .step .hint { color: var(--muted); font-size: 0.9rem; }
+  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+  .pill { background: rgba(37,99,235,0.15); color: #93c5fd; border: 1px solid rgba(37,99,235,0.35); padding: 4px 12px; border-radius: 999px; font-size: 0.82rem; }
+  .warn {
+    background: rgba(220,38,38,0.1);
+    border: 1px solid rgba(220,38,38,0.35);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 14px;
+    font-size: 0.9rem;
+  }
+  .ok { background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.35); border-radius: 10px; padding: 12px 16px; font-size: 0.9rem; }
+  footer { text-align: center; color: var(--muted); padding: 30px 20px 60px; font-size: 0.85rem; }
+  footer a { color: #93c5fd; text-decoration: none; }
+  a.repo-link { color: #93c5fd; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="emoji">☁️🔐</div>
+  <h1>Cloudflare Origin CA Certificate</h1>
+  <p>An end-to-end, visual walkthrough: what it is, why it exists, and exactly how to request, install, and verify one — via the Dashboard or fully scripted via the API.</p>
+  <div class="pill-row" style="justify-content:center;">
+    <span class="pill">🧭 Architecture</span>
+    <span class="pill">🖱️ Dashboard method</span>
+    <span class="pill">⚙️ API / CLI method</span>
+    <span class="pill">🧩 nginx install</span>
+    <span class="pill">✅ Verification</span>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <h2>🧭 1. Where this fits — the big picture</h2>
+    <p>Cloudflare terminates TLS for visitors at its edge using its own public certificate. The remaining gap is the hop between <strong>Cloudflare's edge and your origin server</strong> — that's exactly what an Origin CA certificate secures, letting you safely run <strong>Full (strict)</strong> SSL mode.</p>
+    <div class="mermaid">
+flowchart LR
+    U["🧑‍💻 Visitor<br/>Browser"] -->|"HTTPS, public CA cert"| CF["☁️ Cloudflare Edge<br/>(300+ cities)"]
+    CF -->|"HTTPS, Origin CA cert 🔐"| O["🖥️ Your Origin Server<br/>nginx / apache / app"]
+    style U fill:#1e293b,stroke:#f59e0b,color:#fff
+    style CF fill:#2a1a0f,stroke:#f97316,stroke-width:3px,color:#fff
+    style O fill:#0f1f3d,stroke:#2563eb,color:#fff
+    </div>
+    <div class="ok">Edge ↔ Visitor is covered automatically. Edge ↔ Origin needs the Origin CA cert.</div>
+  </section>
+
+  <section>
+    <h2>🗺️ 2. End-to-end request flow</h2>
+    <div class="mermaid">
+sequenceDiagram
+    participant You as 🧑‍💻 You
+    participant CLI as 🖥️ openssl (local)
+    participant CF as ☁️ Cloudflare API
+    participant Origin as 🖥️ Origin server (nginx)
+
+    You->>CLI: 1. Generate private key + CSR
+    CLI-->>You: origin.key (secret) + origin.csr
+    You->>CF: 2. POST /certificates (CSR + hostnames)
+    CF-->>You: 3. Signed origin certificate (up to 15yr)
+    You->>Origin: 4. Install cert + key in nginx
+    You->>CF: 5. Set SSL/TLS mode = Full (strict)
+    You->>Origin: 6. curl --resolve to verify chain ✅
+    </div>
+
+    <table>
+      <tr><th>Step</th><th>Script</th><th>What happens</th></tr>
+      <tr><td>1</td><td><code>scripts/01-generate-csr.sh</code></td><td>Creates <code>origin.key</code> (RSA 2048) + <code>origin.csr</code> locally. Private key never leaves your machine.</td></tr>
+      <tr><td>2</td><td><code>scripts/02-request-origin-cert.sh</code></td><td>Calls Cloudflare's Origin CA endpoint with the CSR.</td></tr>
+      <tr><td>3</td><td>—</td><td>Cloudflare returns a signed certificate, valid up to 15 years.</td></tr>
+      <tr><td>4</td><td><code>nginx/origin.conf.example</code></td><td>Example server block using the cert + key.</td></tr>
+      <tr><td>5</td><td>Dashboard / API</td><td>Switch the zone's SSL/TLS mode to <strong>Full (strict)</strong>.</td></tr>
+      <tr><td>6</td><td><code>scripts/03-verify.sh</code></td><td>Confirms the origin presents a trusted, Cloudflare-issued chain.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>🔑 3. Credentials this demo needs <span class="badge">sensitive</span></h2>
+    <p>Origin CA certs use a special <strong>Origin CA Key</strong> — not your normal API Token. It can only create/list/revoke origin certs, nothing else on the account.</p>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><div><strong>Log in</strong> to <code>dash.cloudflare.com</code> as <code>contact@rifaterdemsahin.com</code><div class="hint">(this demo's designated Cloudflare account)</div></div></div>
+      <div class="step"><div class="num">2</div><div><strong>Click your profile</strong> (top-right) → <strong>My Profile</strong></div></div>
+      <div class="step"><div class="num">3</div><div><strong>API Tokens</strong> tab → scroll to <strong>Origin CA Key</strong> → <strong>View</strong></div></div>
+    </div>
+    <pre><code>export CF_ORIGIN_CA_KEY="v1.0-xxxxxxxx..."   # from the dashboard above
+export CF_ZONE_DOMAIN="example.com"           # your zone/domain on this account
+export CF_HOSTNAMES="example.com,*.example.com"</code></pre>
+    <div class="warn">⚠️ Never commit this key. The repo's <code>.gitignore</code> already excludes <code>*.key</code>, <code>*.csr</code>, <code>*.pem</code>, and <code>.env</code>.</div>
+  </section>
+
+  <section>
+    <h2>🖱️ 4. Method A — Dashboard (click-through)</h2>
+    <div class="steps">
+      <div class="step"><div class="num">1</div>Log in to <strong>dash.cloudflare.com</strong> with <code>contact@rifaterdemsahin.com</code></div>
+      <div class="step"><div class="num">2</div>Select your domain / zone</div>
+      <div class="step"><div class="num">3</div>Left sidebar → <strong>SSL/TLS</strong> → <strong>Origin Server</strong> tab</div>
+      <div class="step"><div class="num">4</div>Click <strong>Create Certificate</strong></div>
+      <div class="step"><div class="num">5</div>Private key type <strong>RSA (2048)</strong>, hostnames <code>example.com, *.example.com</code>, validity <strong>15 years</strong></div>
+      <div class="step"><div class="num">6</div>Click <strong>Create</strong> — Cloudflare shows the PEM + Key <strong>once</strong>; copy both</div>
+      <div class="step"><div class="num">7</div>Paste into <code>origin.pem</code> / <code>origin.key</code>, install on your server</div>
+      <div class="step"><div class="num">8</div>SSL/TLS → Overview → set mode to <strong>Full (strict)</strong></div>
+    </div>
+    <div class="mermaid">
+flowchart TD
+    A["🌐 dash.cloudflare.com"] --> B["Select zone"]
+    B --> C["SSL/TLS → Origin Server"]
+    C --> D["Create Certificate"]
+    D --> E["Copy PEM + Key (shown ONCE)"]
+    E --> F["Paste into origin.pem / origin.key"]
+    F --> G["Install on nginx / apache"]
+    G --> H["SSL/TLS mode → Full (strict)"]
+    style D fill:#4a3407,stroke:#d97706,color:#fff
+    style H fill:#0f3d1f,stroke:#16a34a,color:#fff
+    </div>
+  </section>
+
+  <section>
+    <h2>⚙️ 5. Method B — API / CLI (scripted, reproducible)</h2>
+    <pre><code># 1. Generate a private key + CSR (stays local)
+./scripts/01-generate-csr.sh
+
+# 2. Send the CSR to Cloudflare, get back a signed cert
+./scripts/02-request-origin-cert.sh
+
+# 3. Install on nginx, then verify
+./scripts/03-verify.sh</code></pre>
+    <p>What <code>02-request-origin-cert.sh</code> actually calls:</p>
+    <pre><code>curl -s https://api.cloudflare.com/client/v4/certificates \
+  -H "X-Auth-User-Service-Key: $CF_ORIGIN_CA_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hostnames": ["example.com", "*.example.com"],
+    "requested_validity": 5475,
+    "request_type": "origin-rsa",
+    "csr": "-----BEGIN CERTIFICATE REQUEST-----\n..."
+  }'</code></pre>
+    <p>Cloudflare responds with the signed certificate under <code>result.certificate</code>.</p>
+  </section>
+
+  <section>
+    <h2>🧩 6. Installing on the origin (nginx)</h2>
+    <pre><code>ssl_certificate     /etc/ssl/cloudflare/origin.pem;
+ssl_certificate_key /etc/ssl/cloudflare/origin.key;
+
+# Optional but recommended: only accept connections carrying
+# Cloudflare's client certificate (Authenticated Origin Pulls)
+# ssl_client_certificate /etc/ssl/cloudflare/authenticated_origin_pull_ca.pem;
+# ssl_verify_client optional;</code></pre>
+    <p>Reload: <code>sudo nginx -t && sudo systemctl reload nginx</code></p>
+  </section>
+
+  <section>
+    <h2>✅ 7. Verifying it worked</h2>
+    <pre><code>./scripts/03-verify.sh
+# or manually:
+curl -v --resolve example.com:443:&lt;ORIGIN_IP&gt; https://example.com/ 2>&1 \
+  | grep -E "subject:|issuer:|SSL certificate verify"</code></pre>
+    <div class="mermaid">
+flowchart LR
+    A["curl --resolve"] --> B{"TLS handshake"}
+    B -->|"issuer = CloudFlare Origin CA"| C["✅ Full (strict) works"]
+    B -->|"self-signed / expired"| D["❌ fix cert install"]
+    style C fill:#0f3d1f,stroke:#16a34a,color:#fff
+    style D fill:#3d0f12,stroke:#dc2626,color:#fff
+    </div>
+    <p>Expect the issuer to show <strong>CloudFlare Origin SSL Certificate Authority</strong>.</p>
+  </section>
+
+  <section>
+    <h2>🛡️ Security notes</h2>
+    <ul>
+      <li>The <strong>private key</strong> never leaves your machine or gets sent to Cloudflare — only the CSR (public part) is.</li>
+      <li><code>CF_ORIGIN_CA_KEY</code> is scoped only to origin certificate create/list/revoke — it can't touch DNS, WAF, or billing. Still treat it as a secret.</li>
+      <li>Origin certs are trusted <strong>only by Cloudflare</strong>, not by public browsers. Don't expose the origin directly without Authenticated Origin Pulls + a firewall allowing only Cloudflare IPs.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  Full source, scripts, and README: <a class="repo-link" href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo">github.com/rifaterdemsahin/cloudflare-origin-cert-demo</a><br/>
+  Reference: <a href="https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/">Cloudflare Docs — Origin CA certificates</a>
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: "dark" });
+</script>
+</body>
+</html>
