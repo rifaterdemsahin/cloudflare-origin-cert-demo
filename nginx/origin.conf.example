@@ -1,0 +1,28 @@
+# Example nginx server block using a Cloudflare Origin CA certificate.
+# Copy the cert/key from scripts/02-request-origin-cert.sh output (or the
+# dashboard download) to the paths below, then: nginx -t && systemctl reload nginx
+
+server {
+    listen 443 ssl;
+    server_name example.com *.example.com;
+
+    ssl_certificate     /etc/ssl/cloudflare/origin.pem;
+    ssl_certificate_key /etc/ssl/cloudflare/origin.key;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # Recommended hardening: only accept TLS connections that carry
+    # Cloudflare's client certificate (Authenticated Origin Pulls).
+    # Download the CA from: https://developers.cloudflare.com/ssl/origin-configuration/authenticated-origin-pull/set-up/mtls/
+    # ssl_client_certificate /etc/ssl/cloudflare/authenticated_origin_pull_ca.pem;
+    # ssl_verify_client optional;
+
+    root /var/www/html;
+    index index.html;
+}
+
+server {
+    listen 80;
+    server_name example.com *.example.com;
+    return 301 https://$host$request_uri;
+}
