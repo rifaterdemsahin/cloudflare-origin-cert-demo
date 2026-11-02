@@ -34,9 +34,9 @@ Tracks the current round of requested changes. See [`SOP.md`](SOP.md) for the st
 - [x] Build `rationale.html` — same content, visual/dark-mode, matching `index.html` style, clickable diagrams
 - [x] Link it from `index.html` (header + footer) and `README.md`
 - [x] Update `Dockerfile` to serve `rationale.html` too
-- [ ] Redeploy to fly.io (round 3, includes rationale.html)
-- [ ] Verify `https://cloudflare-origin-cert-demo.fly.dev/rationale.html` returns 200
-- [ ] Commit + push rounds 2 & 3 to GitHub
+- [x] Redeploy to fly.io (round 3, includes rationale.html)
+- [x] Verify `https://cloudflare-origin-cert-demo.fly.dev/rationale.html` returns 200
+- [x] Commit + push rounds 2 & 3 to GitHub (commit `cd45dae`)
 
 ## Deferred / optional (not started — needs your input or your go-ahead to spend money)
 
