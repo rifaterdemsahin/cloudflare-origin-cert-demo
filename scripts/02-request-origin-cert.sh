@@ -4,7 +4,22 @@
 set -euo pipefail
 
 OUT_DIR="${OUT_DIR:-./out}"
-CF_ORIGIN_CA_KEY="${CF_ORIGIN_CA_KEY:?Set CF_ORIGIN_CA_KEY (Dashboard -> My Profile -> API Tokens -> Origin CA Key)}"
+
+# Origin CA Service Key (X-Auth-User-Service-Key) was removed on Sept 30, 2026.
+# Use an API Token with Zone > SSL and Certificates > Edit permissions.
+if [ -z "${CF_API_TOKEN:-}" ]; then
+  if [ -n "${CF_ORIGIN_CA_KEY:-}" ]; then
+    echo "❌ CF_ORIGIN_CA_KEY (Service Key) was deprecated and removed on September 30, 2026." >&2
+    echo "   Please create an API Token with 'Zone > SSL and Certificates > Edit' and export CF_API_TOKEN." >&2
+    exit 1
+  fi
+  echo "❌ Error: CF_API_TOKEN is required." >&2
+  echo "   Create an API Token (dash.cloudflare.com -> My Profile -> API Tokens)" >&2
+  echo "   Permissions: Zone > SSL and Certificates > Edit" >&2
+  echo "   Then: export CF_API_TOKEN=\"your-api-token\"" >&2
+  exit 1
+fi
+
 HOSTNAMES="${CF_HOSTNAMES:?Set CF_HOSTNAMES, e.g. export CF_HOSTNAMES=example.com,*.example.com}"
 VALIDITY_DAYS="${CF_VALIDITY_DAYS:-5475}"   # 5475 = 15 years (max). Other allowed: 7,30,90,365,730,1095
 CSR_FILE="$OUT_DIR/origin.csr"
@@ -24,7 +39,7 @@ payload=$(jq -n \
 echo "📡 Requesting Origin CA certificate for: $HOSTNAMES"
 
 response=$(curl -s https://api.cloudflare.com/client/v4/certificates \
-  -H "X-Auth-User-Service-Key: $CF_ORIGIN_CA_KEY" \
+  -H "Authorization: Bearer $CF_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d "$payload")
 

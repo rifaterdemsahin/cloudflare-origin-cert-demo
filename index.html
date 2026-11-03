@@ -125,6 +125,153 @@
   footer { text-align: center; color: var(--muted); padding: 30px 20px 60px; font-size: 0.85rem; }
   footer a { color: #93c5fd; text-decoration: none; }
   a.repo-link { color: #93c5fd; }
+
+  /* Screenshot Modal & Thumbnail styles */
+  .screenshot-thumb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(37, 99, 235, 0.15);
+    border: 1px solid rgba(37, 99, 235, 0.4);
+    color: #93c5fd;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: all 0.2s ease;
+  }
+  .screenshot-thumb-btn:hover {
+    background: rgba(37, 99, 235, 0.35);
+    color: #ffffff;
+    border-color: #60a5fa;
+    transform: translateY(-1px);
+  }
+  .screenshot-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .gallery-card {
+    background: #0d1626;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+  .gallery-card:hover {
+    border-color: var(--orange);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  }
+  .gallery-card img {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    display: block;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .gallery-card span {
+    display: block;
+    padding: 6px 8px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gallery-card:hover span { color: #fff; }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(4, 8, 16, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-container {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    max-width: 95vw;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.9);
+    overflow: hidden;
+    animation: modalIn 0.2s ease-out;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .modal-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--panel-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.02);
+  }
+  .modal-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #e6edf7;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .modal-close {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--panel-border);
+    color: var(--muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.2s;
+  }
+  .modal-close:hover {
+    background: rgba(220,38,38,0.25);
+    color: #f87171;
+    border-color: rgba(220,38,38,0.5);
+  }
+  .modal-body {
+    padding: 16px;
+    overflow: auto;
+    text-align: center;
+    background: #060b14;
+  }
+  .modal-body img {
+    max-width: 100%;
+    max-height: 74vh;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    border: 1px solid var(--panel-border);
+  }
+  .modal-caption {
+    padding: 12px 20px;
+    font-size: 0.88rem;
+    color: var(--muted);
+    border-top: 1px solid var(--panel-border);
+    background: rgba(255,255,255,0.02);
+  }
 </style>
 </head>
 <body>
@@ -142,7 +289,10 @@
     <span class="pill">🛫 Fly.io worked example</span>
   </div>
   <p style="font-size:0.8rem; color:#9fb0c9; margin-top:14px;">💡 Every box in the diagrams below is clickable — it opens the relevant doc, script, or file in a new tab.</p>
-  <p style="margin-top:10px;">🤔 New here? Read <a href="rationale.html" style="color:#93c5fd;">the plain-English "why" page</a> first.</p>
+  <p style="margin-top:10px;">
+    ⚡️ Need options? Compare <a href="create-certificate.html" style="color:#f59e0b; font-weight:600;">Two Ways to Create Certificates (UI vs API)</a> ·
+    🤔 New here? Read <a href="rationale.html" style="color:#93c5fd;">the plain-English "why" page</a> first.
+  </p>
 </header>
 
 <main>
@@ -199,17 +349,58 @@ sequenceDiagram
   </section>
 
   <section>
-    <h2>🔑 3. Credentials this demo needs <span class="badge">sensitive</span></h2>
-    <p>Origin CA certs use a special <strong>Origin CA Key</strong> — not your normal API Token. It can only create/list/revoke origin certs, nothing else on the account.</p>
+    <h2>🔑 3. Credentials & Key Generation Process <span class="badge">updated</span></h2>
+    <div class="warn" style="margin-top:0; margin-bottom:16px;">
+      ⚠️ <strong>The Origin CA Key (Service Key) is deprecated and was removed on September 30, 2026</strong> — use an API Token with <code>Zone &gt; SSL and Certificates &gt; Edit</code> instead.
+    </div>
+
+    <h3 style="font-size:1.1rem; margin-top:20px; color:#f97316;">📋 The Full Picture</h3>
+    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--panel-border); border-radius:12px; padding:16px; margin-bottom:16px;">
+      <h4 style="margin-top:0; color:#93c5fd;">What the Origin CA Key was</h4>
+      <p style="font-size:0.92rem; color:var(--text);">The Origin CA API Key (also called the "Service Key") was a special authentication credential used to:</p>
+      <ul style="font-size:0.9rem; color:var(--muted);">
+        <li>Create, list, get, and revoke Origin CA certificates via the API</li>
+        <li>Enroll Keyless SSL key servers and obtain their authentication certificates</li>
+        <li>It was passed via the <code>X-Auth-User-Service-Key</code> header.</li>
+      </ul>
+
+      <h4 style="color:#f87171; margin-top:16px;">Why it's gone</h4>
+      <p style="font-size:0.92rem; color:var(--text);">Per the official deprecation notice, Origin CA Service Keys were removed on <strong>September 30, 2026</strong>. After that date, key server enrollment and certificate refresh using only a Service Key fails. As of November 3, 2026, the key no longer works.</p>
+
+      <h4 style="color:#4ade80; margin-top:16px;">What to use now</h4>
+      <p style="font-size:0.92rem; color:var(--text);">Create an API Token (which is exactly the API Tokens dashboard page) with these permissions:</p>
+      <table>
+        <tr><th>Scope</th><th>Resource</th><th>Permission</th></tr>
+        <tr><td><strong>Zone</strong></td><td><strong>SSL and Certificates</strong></td><td><span style="color:#4ade80; font-weight:600;">Edit</span></td></tr>
+      </table>
+      <p style="font-size:0.92rem; color:var(--muted);">This token authenticates all Origin CA certificate API operations (<code>POST /certificates</code>, <code>GET /certificates</code>, <code>DELETE /certificates/:id</code>, etc.) via <code>Authorization: Bearer &lt;TOKEN&gt;</code> and replaces the Service Key for Keyless SSL enrollment (<code>api_token</code> in <code>gokeyless.yaml</code> or the <code>KEYLESS_API_TOKEN</code> env var).</p>
+
+      <h4 style="color:#fbbf24; margin-top:16px;">If you're migrating Keyless SSL</h4>
+      <ol style="font-size:0.9rem; color:var(--muted);">
+        <li>Upgrade <code>gokeyless</code> to <strong>1.18.0 or later</strong></li>
+        <li>Create an API Token with <strong>Zone &gt; SSL and Certificates &gt; Edit</strong></li>
+        <li>Set <code>api_token</code> in <code>/etc/keyless/gokeyless.yaml</code> (or <code>KEYLESS_API_TOKEN</code>)</li>
+        <li>Remove the old <code>origin_ca_api_key</code> value</li>
+      </ol>
+      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:0;">
+        <em>Sources: <a href="https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/" target="_blank" rel="noopener">Origin CA</a>, <a href="https://developers.cloudflare.com/ssl/keyless-ssl/configuration/" target="_blank" rel="noopener">Keyless SSL configuration</a>, <a href="https://developers.cloudflare.com/api/deprecations/" target="_blank" rel="noopener">API deprecations</a></em>
+      </p>
+      <div style="margin-top:12px;">
+        <button class="screenshot-thumb-btn" onclick="openImageModal('images/Asked-to-AI-to-learn-how-to-set-the-certificate-1.png', 'Architecture & Migration Guidance', 'Detailed breakdown explaining why the Service Key is sunset while the UI and REST API remain available.')">📸 View Screenshot: Architecture Guidance</button>
+      </div>
+    </div>
+
     <div class="steps">
       <div class="step"><div class="num">1</div><div>🔑 <strong>Log in</strong> to <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">dash.cloudflare.com</a> as <code>contact@rifaterdemsahin.com</code><div class="hint">(this demo's designated Cloudflare account)</div></div></div>
-      <div class="step"><div class="num">2</div><div>🚀 Or jump straight to <a href="https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens" target="_blank" rel="noopener">your API Tokens page</a></div></div>
-      <div class="step"><div class="num">3</div><div>🔎 Scroll to <strong>Origin CA Key</strong> → <strong>View</strong></div></div>
+      <div class="step"><div class="num">2</div><div>🚀 Jump straight to <a href="https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens" target="_blank" rel="noopener">your API Tokens page</a></div></div>
+      <div class="step"><div class="num">3</div><div>➕ Click <strong>Create Token</strong> → Create custom token with <strong>Zone &gt; SSL and Certificates &gt; Edit</strong>
+        <br/><button class="screenshot-thumb-btn" onclick="openImageModal('images/Token-Generated-1.png', 'Cloudflare API Token Generated', 'Viewing the newly generated API Token on Cloudflare Dashboard with scoped permissions.')">📸 View Screenshot: Token Generated</button>
+      </div></div>
     </div>
-    <pre><code>export CF_ORIGIN_CA_KEY="v1.0-xxxxxxxx..."   # from the dashboard above
+    <pre><code>export CF_API_TOKEN="xxxxxxxx..."             # API Token with Zone > SSL and Certificates > Edit
 export CF_ZONE_DOMAIN="example.com"           # your zone/domain on this account
 export CF_HOSTNAMES="example.com,*.example.com"</code></pre>
-    <div class="warn">⚠️ Never commit this key. The repo's <code>.gitignore</code> already excludes <code>*.key</code>, <code>*.csr</code>, <code>*.pem</code>, and <code>.env</code>.</div>
+    <div class="warn">⚠️ Never commit this token. The repo's <code>.gitignore</code> already excludes <code>*.key</code>, <code>*.csr</code>, <code>*.pem</code>, and <code>.env</code>.</div>
   </section>
 
   <section class="method-a">
@@ -217,12 +408,44 @@ export CF_HOSTNAMES="example.com,*.example.com"</code></pre>
     <div class="steps">
       <div class="step"><div class="num">1</div>🔑 Log in to <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">dash.cloudflare.com</a> with <code>contact@rifaterdemsahin.com</code> — or go straight to <a href="https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens" target="_blank" rel="noopener">your API Tokens page</a> 🚀</div>
       <div class="step"><div class="num">2</div>🌍 Select your domain / zone</div>
-      <div class="step"><div class="num">3</div>Left sidebar → <strong>SSL/TLS</strong> → <strong>Origin Server</strong> tab</div>
-      <div class="step"><div class="num">4</div>Click <strong>Create Certificate</strong></div>
-      <div class="step"><div class="num">5</div>Private key type <strong>RSA (2048)</strong>, hostnames <code>example.com, *.example.com</code>, validity <strong>15 years</strong></div>
-      <div class="step"><div class="num">6</div>Click <strong>Create</strong> — Cloudflare shows the PEM + Key <strong>once</strong>; copy both</div>
+      <div class="step"><div class="num">3</div><div>Left sidebar → <strong>SSL/TLS</strong> → <strong>Origin Server</strong> tab<br/><button class="screenshot-thumb-btn" onclick="openImageModal('images/Origin-Server-Creation-Menu-1.png', 'SSL/TLS → Origin Server Menu', 'Navigating to the Origin Server tab in Cloudflare Dashboard.')">📸 Screenshot: Origin Server Menu</button></div></div>
+      <div class="step"><div class="num">4</div><div>Click <strong>Create Certificate</strong><br/><button class="screenshot-thumb-btn" onclick="openImageModal('images/Create-Certificate-Button-1.png', 'Create Certificate Button', 'Locating the Create Certificate button in the Origin Server table.')">📸 Screenshot: Create Button</button></div></div>
+      <div class="step"><div class="num">5</div><div>Private key type <strong>RSA (2048)</strong>, hostnames <code>example.com, *.example.com</code>, validity <strong>15 years</strong><br/><button class="screenshot-thumb-btn" onclick="openImageModal('images/Create-Certificate-and-Selected-Domains-1.png', 'Certificate Generation & Hostname Selection', 'Configuring key type (RSA 2048) and hostnames (rifaterdemsahin.com, *.rifaterdemsahin.com).')">📸 Screenshot: Domain Selection Modal</button></div></div>
+      <div class="step"><div class="num">6</div><div>Click <strong>Create</strong> — Cloudflare shows the PEM + Key <strong>once</strong>; copy both<br/><button class="screenshot-thumb-btn" onclick="openImageModal('images/Pem-Format-Selection-With-Validity-1.png', 'Origin Certificate PEM & Private Key', 'Viewing and copying the newly signed Origin Certificate and Private Key in PEM format.')">📸 Screenshot: PEM & Key Display</button></div></div>
       <div class="step"><div class="num">7</div>Paste into <code>origin.pem</code> / <code>origin.key</code>, install on your server</div>
-      <div class="step"><div class="num">8</div>SSL/TLS → Overview → set mode to <strong>Full (strict)</strong></div>
+      <div class="step"><div class="num">8</div><div>SSL/TLS → Overview → set mode to <strong>Full (strict)</strong><br/><button class="screenshot-thumb-btn" onclick="openImageModal('images/Validate-Expiry-and-Creation-1.png', 'Validate Expiry & Creation in Dashboard', 'Certificate listed in the Origin Server table with status and expiry date.')">📸 Screenshot: Validated Certificate in Table</button></div></div>
+    </div>
+
+    <h3 style="font-size:1.05rem; margin-top:24px; color:#f97316;">📸 Step-by-Step Screenshot Gallery (Click any to expand)</h3>
+    <div class="screenshot-gallery">
+      <div class="gallery-card" onclick="openImageModal('images/Origin-Server-Creation-Menu-1.png', '1. Origin Server Menu', 'Navigating to SSL/TLS → Origin Server in the dashboard.')">
+        <img src="images/Origin-Server-Creation-Menu-1.png" alt="Origin Server Menu" />
+        <span>1. Origin Menu</span>
+      </div>
+      <div class="gallery-card" onclick="openImageModal('images/Create-Certificate-Button-1.png', '2. Create Cert Button', 'Origin Server table Create Certificate button.')">
+        <img src="images/Create-Certificate-Button-1.png" alt="Create Button" />
+        <span>2. Create Button</span>
+      </div>
+      <div class="gallery-card" onclick="openImageModal('images/Create-Certificate-and-Selected-Domains-1.png', '3. Hostname Selection', 'Selecting RSA key type and hostnames.')">
+        <img src="images/Create-Certificate-and-Selected-Domains-1.png" alt="Domain Selection" />
+        <span>3. Domains</span>
+      </div>
+      <div class="gallery-card" onclick="openImageModal('images/Pem-Format-Selection-With-Validity-1.png', '4. PEM & Key Display', 'Copying the Certificate and Private Key.')">
+        <img src="images/Pem-Format-Selection-With-Validity-1.png" alt="PEM & Key" />
+        <span>4. PEM & Key</span>
+      </div>
+      <div class="gallery-card" onclick="openImageModal('images/Validate-Expiry-and-Creation-1.png', '5. Validated Certificate', 'Active certificate listed in Origin Server table.')">
+        <img src="images/Validate-Expiry-and-Creation-1.png" alt="Validated Certificate" />
+        <span>5. Expiry Check</span>
+      </div>
+      <div class="gallery-card" onclick="openImageModal('images/Token-Generated-1.png', 'API Token Generated', 'Scoped API Token for Origin CA automation.')">
+        <img src="images/Token-Generated-1.png" alt="API Token" />
+        <span>API Token</span>
+      </div>
+      <div class="gallery-card" onclick="openImageModal('images/Asked-to-AI-to-learn-how-to-set-the-certificate-1.png', 'Architecture Guidance', 'Clarification on UI vs API authentication.')">
+        <img src="images/Asked-to-AI-to-learn-how-to-set-the-certificate-1.png" alt="AI Guidance" />
+        <span>AI Guidance</span>
+      </div>
     </div>
     <div class="mermaid">
 flowchart TD
@@ -264,7 +487,7 @@ flowchart TD
 ./scripts/03-verify.sh</code></pre>
     <p>What <code>02-request-origin-cert.sh</code> actually calls:</p>
     <pre><code>curl -s https://api.cloudflare.com/client/v4/certificates \
-  -H "X-Auth-User-Service-Key: $CF_ORIGIN_CA_KEY" \
+  -H "Authorization: Bearer $CF_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "hostnames": ["example.com", "*.example.com"],
@@ -306,6 +529,9 @@ flowchart LR
     click D "https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/scripts/03-verify.sh" "03-verify.sh source" _blank
     </div>
     <p>Expect the issuer to show <strong>CloudFlare Origin SSL Certificate Authority</strong>.</p>
+    <div style="margin-top:10px;">
+      <button class="screenshot-thumb-btn" onclick="openImageModal('images/Validate-Expiry-and-Creation-1.png', 'Cloudflare Dashboard Verification', 'The live certificate in the Origin Certificates table displaying creation date, validity status, and expiration date.')">📸 View Dashboard Status Screenshot</button>
+    </div>
   </section>
 
   <section>
@@ -347,7 +573,7 @@ flowchart LR
     <h2>🛡️ Security notes</h2>
     <ul>
       <li>The <strong>private key</strong> never leaves your machine or gets sent to Cloudflare — only the CSR (public part) is.</li>
-      <li><code>CF_ORIGIN_CA_KEY</code> is scoped only to origin certificate create/list/revoke — it can't touch DNS, WAF, or billing. Still treat it as a secret.</li>
+      <li><code>CF_API_TOKEN</code> is scoped with least privilege to <strong>Zone &gt; SSL and Certificates &gt; Edit</strong> for only the required zone. The legacy account-wide <code>Origin CA Key</code> (Service Key) was removed on September 30, 2026.</li>
       <li>Origin certs are trusted <strong>only by Cloudflare</strong>, not by public browsers. Don't expose the origin directly without Authenticated Origin Pulls + a firewall allowing only Cloudflare IPs.</li>
     </ul>
   </section>
@@ -355,13 +581,45 @@ flowchart LR
 </main>
 
 <footer>
+  ⚡️ Certificate Methods: <a href="create-certificate.html">Two Ways to Create Certificates (UI vs API)</a> ·
   🤔 Why do this at all? <a href="rationale.html">Read the plain-English rationale</a><br/>
   Full source, scripts, and README: <a class="repo-link" href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo">github.com/rifaterdemsahin/cloudflare-origin-cert-demo</a><br/>
   Reference: <a href="https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/">Cloudflare Docs — Origin CA certificates</a>
 </footer>
 
+<!-- Reusable Screenshot Modal -->
+<div id="imageModal" class="modal-overlay" onclick="closeImageModal(event)">
+  <div class="modal-container" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modalTitle">📸 Screenshot</h3>
+      <button class="modal-close" onclick="closeImageModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <img id="modalImg" src="" alt="Screenshot" />
+    </div>
+    <div class="modal-caption" id="modalCaption"></div>
+  </div>
+</div>
+
 <script>
   mermaid.initialize({ startOnLoad: true, theme: "dark", securityLevel: "loose" });
+
+  function openImageModal(src, title, caption) {
+    document.getElementById('modalImg').src = src;
+    document.getElementById('modalTitle').innerHTML = '📸 ' + (title || 'Screenshot');
+    document.getElementById('modalCaption').textContent = caption || '';
+    document.getElementById('imageModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeImageModal() {
+    document.getElementById('imageModal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeImageModal();
+  });
 </script>
 </body>
 </html>

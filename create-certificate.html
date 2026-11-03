@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Two Ways to Create & Manage Cloudflare Origin CA Certificates</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #121b2e;
+    --panel-border: #22304a;
+    --text: #e6edf7;
+    --muted: #9fb0c9;
+    --orange: #f97316;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --amber: #d97706;
+    --purple: #a855f7;
+    --code-bg: #0a1020;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 10% -10%, #1b2a4a 0%, var(--bg) 55%);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header { padding: 48px 24px 32px; text-align: center; }
+  header .emoji { font-size: 48px; }
+  h1 {
+    font-size: 2rem;
+    margin: 12px 0 8px;
+    background: linear-gradient(90deg, #f97316, #f59e0b, #38bdf8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header p { color: var(--muted); max-width: 720px; margin: 0 auto; }
+  .nav { text-align: center; margin-bottom: 12px; }
+  .nav a { color: #93c5fd; text-decoration: none; margin: 0 10px; font-size: 0.9rem; font-weight: 500; }
+  .nav a:hover { text-decoration: underline; }
+  main { max-width: 1000px; margin: 0 auto; padding: 0 20px 80px; }
+  section {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 28px 28px 32px;
+    margin-bottom: 28px;
+    box-shadow: 0 10px 30px -15px rgba(0,0,0,0.6);
+  }
+  section h2 { margin-top: 0; font-size: 1.35rem; display: flex; align-items: center; gap: 10px; }
+  .callout-box {
+    background: rgba(37,99,235,0.08);
+    border: 1px solid rgba(37,99,235,0.3);
+    border-left: 5px solid #38bdf8;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+  .callout-box h3 { margin-top: 0; color: #38bdf8; font-size: 1.15rem; }
+  .mermaid { background: #0d1626; border-radius: 12px; padding: 16px; margin: 20px 0; }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 20px;
+  }
+  .card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+  }
+  .card-option1 { border-top: 4px solid var(--orange); }
+  .card-option2 { border-top: 4px solid var(--blue); }
+  .card h3 { margin-top: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .badge-ui { background: rgba(249,115,22,0.18); color: var(--orange); border: 1px solid rgba(249,115,22,0.4); }
+  .badge-api { background: rgba(37,99,235,0.18); color: #93c5fd; border: 1px solid rgba(37,99,235,0.4); }
+  .badge-green { background: rgba(22,163,74,0.18); color: #4ade80; border: 1px solid rgba(22,163,74,0.4); }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--panel-border); }
+  th { color: var(--muted); font-weight: 600; background: rgba(255,255,255,0.02); }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 6px; font-size: 0.88em; color: #ffd8a8; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+  }
+  pre code { background: none; padding: 0; color: #d7e3f4; }
+  .btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    transition: all 0.2s ease;
+  }
+  .btn-orange { background: #ea580c; color: #fff; }
+  .btn-orange:hover { background: #f97316; }
+  .btn-blue { background: #2563eb; color: #fff; }
+  .btn-blue:hover { background: #3b82f6; }
+  .warn {
+    background: rgba(220,38,38,0.1);
+    border: 1px solid rgba(220,38,38,0.35);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 0.92rem;
+  }
+  .ok {
+    background: rgba(22,163,74,0.1);
+    border: 1px solid rgba(22,163,74,0.35);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 0.92rem;
+  }
+  footer { text-align: center; color: var(--muted); padding: 30px 20px 60px; font-size: 0.85rem; }
+  footer a { color: #93c5fd; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a href="index.html">← Technical Walkthrough</a> ·
+    <a href="rationale.html">Plain-English "Why" Page</a> ·
+    <a href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo" target="_blank" rel="noopener">GitHub Repo</a>
+  </div>
+  <div class="emoji">⚡️🔑</div>
+  <h1>Two Ways to Create & Manage Origin CA Certificates</h1>
+  <p>The dashboard UI is still fully available. Only the legacy Origin CA Service Key was removed — not the certificate interface. You have two distinct ways to manage your origin certificates.</p>
+</header>
+
+<main>
+
+  <!-- Big Clarification Banner -->
+  <section>
+    <div class="callout-box">
+      <h3>💡 Clarification: UI vs. Authentication Credential</h3>
+      <p style="margin: 0; font-size: 1rem; color: #e2e8f0;">
+        <strong>No — the dashboard UI is still fully available.</strong> The official deprecation on <strong>September 30, 2026</strong> applied strictly to the legacy <em>Origin CA API Key (Service Key)</em> authentication credential (<code>X-Auth-User-Service-Key</code>). The certificate management interface, the Origin CA service itself, and automated API management remain completely operational.
+      </p>
+    </div>
+
+    <div class="mermaid">
+flowchart TD
+    ROOT["🔐 Cloudflare Origin CA Certificates"] --> OPT1["🖱️ Option 1: Dashboard UI<br/>(Still Fully Available)"]
+    ROOT --> OPT2["⚙️ Option 2: REST API<br/>(For Automation & CI/CD)"]
+
+    OPT1 --> U1["Direct Click in Web Browser"]
+    OPT1 --> U2["Cloudflare creates Key + CSR<br/>OR paste your own CSR"]
+    OPT1 --> U3["List & Revoke Certificates"]
+
+    OPT2 --> A1["Authenticate via API Token<br/>Zone &gt; SSL and Certificates &gt; Edit"]
+    OPT2 --> A2["POST /certificates (Create)"]
+    OPT2 --> A3["GET /certificates (List/Get)"]
+    OPT2 --> A4["DELETE /certificates/:id (Revoke)"]
+
+    style ROOT fill:#2a1a0f,stroke:#f97316,stroke-width:2px,color:#fff
+    style OPT1 fill:#2e1a0b,stroke:#f59e0b,color:#fff
+    style OPT2 fill:#0f1f3d,stroke:#2563eb,color:#fff
+    style A1 fill:#0f3d1f,stroke:#16a34a,color:#fff
+
+    click OPT1 "https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f" "Open Cloudflare Dashboard" _blank
+    click OPT2 "https://developers.cloudflare.com/api/resources/origin_ca_certificates/" "Origin CA API Docs" _blank
+    click A1 "https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens" "Create API Token" _blank
+    </div>
+  </section>
+
+  <!-- The Two Options Detailed Grid -->
+  <div class="grid-2">
+
+    <!-- Option 1: Dashboard UI -->
+    <div class="card card-option1">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span class="badge badge-ui">Option 1</span>
+        <span class="badge badge-green">Always Available</span>
+      </div>
+      <h3>🖱️ Dashboard UI (Manual / Click-through)</h3>
+      <p style="color:var(--muted); font-size:0.92rem;">
+        Ideal for manual setups, single servers, quick testing, or when you prefer a browser interface without scripting.
+      </p>
+
+      <h4 style="color:#f59e0b; margin-top:16px;">Where to find it:</h4>
+      <p style="font-size:0.9rem;">
+        Navigate to <strong>SSL/TLS → Origin Server → Origin Certificates</strong> tab.
+      </p>
+
+      <h4 style="color:#f59e0b; margin-top:16px;">What you can do:</h4>
+      <ul style="font-size:0.9rem; padding-left:20px; color:var(--text);">
+        <li><strong>Create a certificate:</strong>
+          <ul>
+            <li>Let Cloudflare generate the private key + CSR automatically, or</li>
+            <li>Paste your own pre-generated CSR (private key never leaves your server).</li>
+          </ul>
+        </li>
+        <li><strong>List existing certificates:</strong> View expiration dates, associated hostnames, and status.</li>
+        <li><strong>Revoke a certificate:</strong> Instant 1-click revocation from the table.</li>
+      </ul>
+
+      <div style="margin-top:20px; padding:14px; background:rgba(249,115,22,0.06); border-radius:10px; border:1px solid rgba(249,115,22,0.2);">
+        <strong style="color:var(--orange);">🔗 Direct Link:</strong><br/>
+        <a href="https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f" target="_blank" rel="noopener" class="btn btn-orange">Jump to Origin Server in Dashboard →</a>
+      </div>
+    </div>
+
+    <!-- Option 2: API -->
+    <div class="card card-option2">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span class="badge badge-api">Option 2</span>
+        <span class="badge badge-ui">For Automation</span>
+      </div>
+      <h3>⚙️ REST API (Automated / CI/CD)</h3>
+      <p style="color:var(--muted); font-size:0.92rem;">
+        Ideal for automated certificate lifecycles, CI/CD deployment pipelines, Kubernetes <code>cert-manager</code>, Terraform, and shell scripts.
+      </p>
+
+      <h4 style="color:#93c5fd; margin-top:16px;">Authentication Required:</h4>
+      <p style="font-size:0.9rem;">
+        Standard Cloudflare <strong>API Token</strong> passed via <code>Authorization: Bearer &lt;TOKEN&gt;</code> with permissions:
+      </p>
+      <table>
+        <tr><th>Scope</th><th>Resource</th><th>Permission</th></tr>
+        <tr><td><strong>Zone</strong></td><td><strong>SSL and Certificates</strong></td><td><span style="color:#4ade80; font-weight:700;">Edit</span></td></tr>
+      </table>
+
+      <h4 style="color:#93c5fd; margin-top:16px;">Available Endpoints:</h4>
+      <table>
+        <tr><th>Operation</th><th>Method</th><th>Endpoint</th></tr>
+        <tr><td><strong>List</strong></td><td><code>GET</code></td><td><code>/certificates?zone_id=&lt;ZONE_ID&gt;</code></td></tr>
+        <tr><td><strong>Create</strong></td><td><code>POST</code></td><td><code>/certificates</code></td></tr>
+        <tr><td><strong>Get</strong></td><td><code>GET</code></td><td><code>/certificates/&lt;ID&gt;</code></td></tr>
+        <tr><td><strong>Revoke</strong></td><td><code>DELETE</code></td><td><code>/certificates/&lt;ID&gt;</code></td></tr>
+      </table>
+
+      <div style="margin-top:20px; padding:14px; background:rgba(37,99,235,0.06); border-radius:10px; border:1px solid rgba(37,99,235,0.2);">
+        <strong style="color:#93c5fd;">🔗 Ready Script:</strong><br/>
+        <a href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo/blob/main/scripts/02-request-origin-cert.sh" target="_blank" rel="noopener" class="btn btn-blue">View 02-request-origin-cert.sh on GitHub →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Code Snippets for Option 2 -->
+  <section style="margin-top:28px;">
+    <h2>💻 Automation Quick Reference (Option 2)</h2>
+    <p>Here is how to execute all four operations with <code>curl</code> using your scoped API Token:</p>
+
+    <h3 style="color:#f59e0b; font-size:1rem; margin-top:18px;">1. Create an Origin Certificate</h3>
+    <pre><code>curl -s -X POST https://api.cloudflare.com/client/v4/certificates \
+  -H "Authorization: Bearer $CF_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hostnames": ["example.com", "*.example.com"],
+    "requested_validity": 5475,
+    "request_type": "origin-rsa",
+    "csr": "-----BEGIN CERTIFICATE REQUEST-----\n..."
+  }'</code></pre>
+
+    <h3 style="color:#f59e0b; font-size:1rem; margin-top:18px;">2. List Existing Certificates</h3>
+    <pre><code>curl -s -X GET "https://api.cloudflare.com/client/v4/certificates?zone_id=$CF_ZONE_ID" \
+  -H "Authorization: Bearer $CF_API_TOKEN"</code></pre>
+
+    <h3 style="color:#f59e0b; font-size:1rem; margin-top:18px;">3. Get Details of a Specific Certificate</h3>
+    <pre><code>curl -s -X GET "https://api.cloudflare.com/client/v4/certificates/$CERT_ID" \
+  -H "Authorization: Bearer $CF_API_TOKEN"</code></pre>
+
+    <h3 style="color:#f59e0b; font-size:1rem; margin-top:18px;">4. Revoke a Certificate</h3>
+    <pre><code>curl -s -X DELETE "https://api.cloudflare.com/client/v4/certificates/$CERT_ID" \
+  -H "Authorization: Bearer $CF_API_TOKEN"</code></pre>
+  </section>
+
+  <!-- Summary Comparison -->
+  <section>
+    <h2>⚖️ Side-by-Side Comparison</h2>
+    <table>
+      <tr>
+        <th>Aspect</th>
+        <th>Option 1: Dashboard UI</th>
+        <th>Option 2: API (Token)</th>
+      </tr>
+      <tr>
+        <td><strong>Primary Use Case</strong></td>
+        <td>Single origins, manual setup, visual inspection</td>
+        <td>CI/CD pipelines, Kubernetes, cert-manager, scripts</td>
+      </tr>
+      <tr>
+        <td><strong>Prerequisites</strong></td>
+        <td>Cloudflare Dashboard login</td>
+        <td>API Token (Zone > SSL and Certificates > Edit)</td>
+      </tr>
+      <tr>
+        <td><strong>CSR Generation</strong></td>
+        <td>Can generate both private key + CSR in browser, or accept your CSR</td>
+        <td>Accepts your pre-generated CSR via JSON payload</td>
+      </tr>
+      <tr>
+        <td><strong>Validity Options</strong></td>
+        <td>7 days to 15 years (default 15 years)</td>
+        <td>7, 30, 90, 365, 730, 1095, or 5475 days</td>
+      </tr>
+      <tr>
+        <td><strong>Status Today</strong></td>
+        <td><span class="badge badge-green">Fully Operational</span></td>
+        <td><span class="badge badge-green">Fully Operational</span> (using Bearer API Token)</td>
+      </tr>
+    </table>
+    <div class="ok" style="margin-top:20px;">
+      ✨ <strong>Takeaway:</strong> Choose Option 1 when you want instant visual setup in your browser. Choose Option 2 when you need repeatable, infrastructure-as-code automation.
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  🔗 Navigation: <a href="index.html">Technical Walkthrough</a> · <a href="rationale.html">Plain-English "Why" Page</a> · <a href="https://github.com/rifaterdemsahin/cloudflare-origin-cert-demo" target="_blank" rel="noopener">GitHub Repo</a><br/>
+  Reference: <a href="https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/" target="_blank" rel="noopener">Cloudflare Docs — Origin CA Certificates</a>
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: "dark", securityLevel: "loose" });
+</script>
+</body>
+</html>

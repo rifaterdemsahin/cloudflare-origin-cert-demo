@@ -6,6 +6,8 @@ A hands-on, visual walkthrough of **Cloudflare Origin CA Certificates**: what th
 
 🌐 **Live interactive demo:** **[cloudflare-origin-cert-demo.fly.dev](https://cloudflare-origin-cert-demo.fly.dev/)** — same walkthrough below, rendered as a single page with clickable Mermaid diagrams (each node links out to the relevant doc, script, or file).
 
+⚡️ **Two Ways to Create & Manage:** See **[`create-certificate.html`](create-certificate.html)** (or [live version](https://cloudflare-origin-cert-demo.fly.dev/create-certificate.html)) — compares the Dashboard UI (still fully available) vs. REST API automation (`Zone > SSL and Certificates > Edit`).
+
 🤔 **New to this?** Read **[`RATIONALE.md`](RATIONALE.md)** (or the [live version](https://cloudflare-origin-cert-demo.fly.dev/rationale.html)) first — a plain-English, no-jargon explanation of *why* this exists, using an office building and an ID badge as the analogy.
 
 ---
@@ -61,18 +63,48 @@ sequenceDiagram
 
 ---
 
-## 🔑 3. Credentials this demo needs
+## 🔑 3. Credentials & Key Generation Process
 
-Cloudflare Origin CA certs are issued with a special **Origin CA Key** — *not* your normal API Token. This is intentional (it can only create/revoke origin certs, nothing else on your account).
+> ⚠️ **The Origin CA Key (Service Key) is deprecated and was removed on September 30, 2026 — use an API Token with Zone > SSL and Certificates > Edit instead.**
+
+### The Full Picture: Why the Key Generation Changed
+
+#### What the Origin CA Key was
+The Origin CA API Key (also called the "Service Key") was a legacy authentication credential used to:
+- Create, list, get, and revoke Origin CA certificates via the API
+- Enroll Keyless SSL key servers and obtain their authentication certificates
+- It was passed via the `X-Auth-User-Service-Key` header.
+
+#### Why it's gone
+Per the official deprecation notice, Origin CA Service Keys were removed on **September 30, 2026**. After that date, key server enrollment and certificate refresh using only a Service Key fails. As of November 3, 2026, the key no longer works.
+
+#### What to use now
+Create an **API Token** on your Cloudflare dashboard with scoped permissions:
+
+| Scope | Resource | Permission |
+|---|---|---|
+| **Zone** | **SSL and Certificates** | **Edit** |
+
+This token authenticates all Origin CA certificate API operations (`POST /certificates`, `GET /certificates`, `DELETE /certificates/:id`, etc.) via standard `Authorization: Bearer <TOKEN>` and replaces the Service Key for Keyless SSL enrollment (`api_token` in `gokeyless.yaml` or the `KEYLESS_API_TOKEN` environment variable).
+
+#### If you're migrating Keyless SSL
+1. Upgrade `gokeyless` to **1.18.0 or later**.
+2. Create an API Token with **Zone > SSL and Certificates > Edit**.
+3. Set `api_token` in `/etc/keyless/gokeyless.yaml` (or the `KEYLESS_API_TOKEN` env var).
+4. Remove the old `origin_ca_api_key` value.
+
+---
+
+### Getting your API Token
 
 | Where to get it | Steps |
 |---|---|
-| 🌐 Cloudflare Dashboard | Log in as `contact@rifaterdemsahin.com` → 🔑 **[jump straight to your API Tokens page](https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens)** → scroll to **Origin CA Key** → **View** |
+| 🌐 Cloudflare Dashboard | Log in as `contact@rifaterdemsahin.com` → 🔑 **[jump straight to your API Tokens page](https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens)** → **Create Token** → configure **Zone > SSL and Certificates > Edit** → **Create Token** |
 
 Export it locally (never commit this):
 
 ```bash
-export CF_ORIGIN_CA_KEY="v1.0-xxxxxxxx..."   # from the dashboard above
+export CF_API_TOKEN="xxxxxxxx..."             # standard Bearer API token with Zone > SSL and Certificates > Edit
 export CF_ZONE_DOMAIN="example.com"           # your zone/domain on this Cloudflare account
 export CF_HOSTNAMES="example.com,*.example.com"
 ```
@@ -83,7 +115,7 @@ export CF_HOSTNAMES="example.com,*.example.com"
 
 ## 🖱️ 4. Method A — Dashboard (click-through, no CLI)
 
-1. 🔑 Log in to **[dash.cloudflare.com](https://dash.cloudflare.com/)** with `contact@rifaterdemsahin.com` — or jump straight to **[your API Tokens page](https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens)** for the Origin CA Key
+1. 🔑 Log in to **[dash.cloudflare.com](https://dash.cloudflare.com/)** with `contact@rifaterdemsahin.com` — or jump straight to **[your API Tokens page](https://dash.cloudflare.com/3683d1886e0a3a3152242c84f226ba3f/api-tokens)** to create an API Token (Zone > SSL and Certificates > Edit)
 2. 🌍 Select your domain/zone
 3. 🧭 Left sidebar → **SSL/TLS** → **Origin Server** tab
 4. Click **Create Certificate**
@@ -128,7 +160,7 @@ flowchart TD
 
 ```bash
 curl -s https://api.cloudflare.com/client/v4/certificates \
-  -H "X-Auth-User-Service-Key: $CF_ORIGIN_CA_KEY" \
+  -H "Authorization: Bearer $CF_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "hostnames": ["example.com", "*.example.com"],
@@ -228,6 +260,7 @@ Run it:
 cloudflare-origin-cert-demo/
 ├── README.md                          ← you are here
 ├── index.html                         ← live interactive version (fly.dev)
+├── create-certificate.html            ← ⚡️ Two Ways to Create & Manage (UI vs API)
 ├── rationale.html                     ← 🤔 plain-English "why" page (live)
 ├── RATIONALE.md                       ← same, as markdown
 ├── TODO.md                            ← live progress tracker
@@ -256,11 +289,13 @@ cloudflare-origin-cert-demo/
 ## 🛡️ Security notes
 
 - The **private key** generated in step 1 never leaves your machine and is never sent to Cloudflare — only the CSR (public part) is.
-- `CF_ORIGIN_CA_KEY` is scoped **only** to origin certificate create/list/revoke. It cannot touch DNS, WAF, billing, etc. Still treat it as a secret.
+- `CF_API_TOKEN` should follow the principle of least privilege, scoped **only** to **Zone > SSL and Certificates > Edit** for the specific zone. The legacy account-level `Origin CA Key` (`X-Auth-User-Service-Key`) was deprecated and removed on September 30, 2026. Still treat tokens as secrets.
 - Origin certs are trusted **only by Cloudflare**, not by public browsers — never use them for a server that's reachable directly (bypassing Cloudflare) unless you also lock that down (e.g. Authenticated Origin Pulls + firewall rules allowing only Cloudflare IPs).
 
 ## 📚 References
 
 - 🌐 **Live demo** — [cloudflare-origin-cert-demo.fly.dev](https://cloudflare-origin-cert-demo.fly.dev/)
 - Cloudflare Docs — [Origin CA certificates](https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/)
+- Cloudflare Docs — [Keyless SSL configuration](https://developers.cloudflare.com/ssl/keyless-ssl/configuration/)
+- Cloudflare API — [API deprecations & sunset dates](https://developers.cloudflare.com/api/deprecations/)
 - Cloudflare API — [Origin CA Certificates endpoint](https://developers.cloudflare.com/api/resources/origin_ca_certificates/)
